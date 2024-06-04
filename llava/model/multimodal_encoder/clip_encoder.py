@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 
-from transformers import CLIPVisionModel, CLIPImageProcessor, CLIPVisionConfig
+from transformers import CLIPImageProcessor, CLIPVisionConfig
+from llava.model.multimodal_encoder.modeling_clip import CLIPVisionModel
 
 
 class CLIPVisionTower(nn.Module):
@@ -27,7 +28,7 @@ class CLIPVisionTower(nn.Module):
             return
 
         self.image_processor = CLIPImageProcessor.from_pretrained(self.vision_tower_name)
-        self.vision_tower = CLIPVisionModel.from_pretrained(self.vision_tower_name, device_map=device_map)
+        self.vision_tower = CLIPVisionModel.from_pretrained(self.vision_tower_name, device_map=device_map).half()
         self.vision_tower.requires_grad_(False)
 
         self.is_loaded = True

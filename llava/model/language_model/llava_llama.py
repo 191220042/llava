@@ -19,12 +19,13 @@ import torch
 import torch.nn as nn
 
 from transformers import AutoConfig, AutoModelForCausalLM, \
-                         LlamaConfig, LlamaModel, LlamaForCausalLM
-
+                         LlamaConfig
+from llava.model.language_model.modeling_llama import  LlamaForCausalLM,LlamaModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers.generation.utils import GenerateOutput
 
 from ..llava_arch import LlavaMetaModel, LlavaMetaForCausalLM
+
 
 
 class LlavaConfig(LlamaConfig):
@@ -39,8 +40,8 @@ class LlavaLlamaModel(LlavaMetaModel, LlamaModel):
 
 
 class LlavaLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
-    config_class = LlavaConfig
 
+    config_class = LlavaConfig
     def __init__(self, config):
         super(LlamaForCausalLM, self).__init__(config)
         self.model = LlavaLlamaModel(config)
