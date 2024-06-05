@@ -172,6 +172,8 @@ class CLIPVisionEmbeddings(nn.Module):
             bias=False,
         )
 
+        self.unfold = torch.nn.Unfold(kernel_size=self.patch_size,stride=self.patch_size)
+
         self.num_patches = (self.image_size // self.patch_size) ** 2
         self.num_positions = self.num_patches + 1
         self.position_embedding = nn.Embedding(self.num_positions, self.embed_dim)
@@ -180,7 +182,20 @@ class CLIPVisionEmbeddings(nn.Module):
     def forward(self, pixel_values: torch.FloatTensor) -> torch.Tensor:
         batch_size = pixel_values.shape[0]
         target_dtype = self.patch_embedding.weight.dtype
-        patch_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype))  # shape = [*, width, grid, grid]
+
+        temp_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype)) 
+        unfold_embeds = self.unfold(pixel_values.to(dtype=target_dtype)).transpose(1,2)
+
+        unfold_embeds = fp16_to_e5m8(unfold_embeds, dim=-1, nshare=64)
+        w = self.patch_embedding.weight.flatten(1).t()
+        w = fp16_to_e5m8(w, dim=0, nshare=64)
+        patch_embeds = (
+            torch.matmul(unfold_embeds, w)
+            .transpose(1, 2)
+            .view(temp_embeds.shape)
+        )
+
+        # patch_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype))  # shape = [*, width, grid, grid]
         patch_embeds = patch_embeds.flatten(2).transpose(1, 2)
 
         class_embeds = self.class_embedding.expand(batch_size, 1, -1)

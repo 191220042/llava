@@ -407,7 +407,7 @@ class LlamaAttention(nn.Module):
 
         # hmfp transfer
         query_states = fp16_to_e5m8(query_states,dim=-1,nshare=64)
-        key_states = fp16_to_e5m8(key_states,dim=-2,nshare=64)
+        key_states = fp16_to_e5m8(key_states,dim=-1,nshare=64)
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
 
         if past_key_value is not None:
