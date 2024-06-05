@@ -42,7 +42,7 @@ serve_images/
 # sh
 *.sh
 *.md
-nohup.out
+*.output
 
 # houmo
 /hmquant
