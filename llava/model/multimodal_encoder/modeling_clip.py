@@ -180,22 +180,32 @@ class CLIPVisionEmbeddings(nn.Module):
         self.register_buffer("position_ids", torch.arange(self.num_positions).expand((1, -1)), persistent=False)
 
     def forward(self, pixel_values: torch.FloatTensor) -> torch.Tensor:
+        # batch_size = pixel_values.shape[0]
+        # target_dtype = self.patch_embedding.weight.dtype
+
+        # temp_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype)) 
+        # unfold_embeds = self.unfold(pixel_values.to(dtype=target_dtype)).transpose(1,2)
+
+        # unfold_embeds = fp16_to_e5m8(unfold_embeds, dim=-1, nshare=64)
+        # w = self.patch_embedding.weight.flatten(1).t()
+        # w = fp16_to_e5m8(w, dim=0, nshare=64)
+        # patch_embeds = (
+        #     torch.matmul(unfold_embeds, w)
+        #     .transpose(1, 2)
+        #     .view(temp_embeds.shape)
+        # )
+
+        # # patch_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype))  # shape = [*, width, grid, grid]
+        # patch_embeds = patch_embeds.flatten(2).transpose(1, 2)
+
+        # class_embeds = self.class_embedding.expand(batch_size, 1, -1)
+        # embeddings = torch.cat([class_embeds, patch_embeds], dim=1)
+        # embeddings = embeddings + self.position_embedding(self.position_ids)
+        # return embeddings
+    
         batch_size = pixel_values.shape[0]
         target_dtype = self.patch_embedding.weight.dtype
-
-        temp_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype)) 
-        unfold_embeds = self.unfold(pixel_values.to(dtype=target_dtype)).transpose(1,2)
-
-        unfold_embeds = fp16_to_e5m8(unfold_embeds, dim=-1, nshare=64)
-        w = self.patch_embedding.weight.flatten(1).t()
-        w = fp16_to_e5m8(w, dim=0, nshare=64)
-        patch_embeds = (
-            torch.matmul(unfold_embeds, w)
-            .transpose(1, 2)
-            .view(temp_embeds.shape)
-        )
-
-        # patch_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype))  # shape = [*, width, grid, grid]
+        patch_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype))  # shape = [*, width, grid, grid]
         patch_embeds = patch_embeds.flatten(2).transpose(1, 2)
 
         class_embeds = self.class_embedding.expand(batch_size, 1, -1)

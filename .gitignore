@@ -46,3 +46,5 @@ serve_images/
 
 # houmo
 /hmquant
+*.pt
+*.tar
